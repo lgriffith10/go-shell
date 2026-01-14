@@ -65,12 +65,22 @@ func main() {
 
 		handler, ok := commands[instruction]
 
-		if !ok {
-			fmt.Printf("%s: command not found\n", instruction)
+		if ok {
+			handler(parts[1:])
 			continue
 		}
 
-		handler(parts[1:])
+		execPath, _ := exec.LookPath(instruction)
 
+		if execPath != "" {
+			cmd := exec.Command(instruction, parts[1:]...)
+
+			if content, err := cmd.Output(); len(content) > 0 && err == nil {
+				fmt.Print(string(content))
+				continue
+			}
+		}
+
+		fmt.Printf("%s: command not found\n", instruction)
 	}
 }
