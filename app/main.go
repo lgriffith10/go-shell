@@ -16,6 +16,7 @@ var builtins = []string{
 	"type",
 	"exit",
 	"pwd",
+	"cd",
 }
 
 func main() {
@@ -48,6 +49,13 @@ func main() {
 
 			if currentDirectory != "" {
 				fmt.Printf("%s\n", currentDirectory)
+			}
+		},
+		"cd": func(args []string) {
+			if args[0] != "" {
+				if err := os.Chdir(args[0]); err != nil {
+					fmt.Printf("cd: %s: No such file or directory\n", args[0])
+				}
 			}
 		},
 	}
