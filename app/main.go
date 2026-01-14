@@ -19,6 +19,10 @@ func main() {
 
 	command = strings.TrimSpace(command)
 
+	if command == "exit" {
+		os.Exit(0)
+	}
+
 	fmt.Fprintf(os.Stderr, "%s: command not found\n", command)
 	main()
 }
