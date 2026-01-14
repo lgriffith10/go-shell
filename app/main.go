@@ -18,11 +18,18 @@ func main() {
 	}
 
 	command = strings.TrimSpace(command)
+	parts := strings.Split(command, " ")
 
-	if command == "exit" {
+	instruction := parts[0]
+
+	switch instruction {
+	case "exit":
 		os.Exit(0)
+	case "echo":
+		fmt.Println(strings.Join(parts[1:], " "))
+	default:
+		fmt.Fprintf(os.Stderr, "%s: command not found\n", command)
 	}
 
-	fmt.Fprintf(os.Stderr, "%s: command not found\n", command)
 	main()
 }
