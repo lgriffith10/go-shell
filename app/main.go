@@ -15,6 +15,7 @@ var builtins = []string{
 	"echo",
 	"type",
 	"exit",
+	"pwd",
 }
 
 func main() {
@@ -40,7 +41,13 @@ func main() {
 				}
 
 				fmt.Printf("%s: not found\n", args[0])
-				return
+			}
+		},
+		"pwd": func(args []string) {
+			currentDirectory, _ := os.Getwd()
+
+			if currentDirectory != "" {
+				fmt.Printf("%s\n", currentDirectory)
 			}
 		},
 	}
