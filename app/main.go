@@ -20,5 +20,5 @@ func main() {
 	command = strings.TrimSpace(command)
 
 	fmt.Fprintf(os.Stderr, "%s: command not found\n", command)
-	fmt.Print("$ ")
+	main()
 }
