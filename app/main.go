@@ -5,66 +5,23 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"slices"
 	"strings"
+
+	"github.com/codecrafters-io/shell-starter-go/app/commands"
 )
 
 type commandFunc func(args []string)
 
-var builtins = []string{
-	"echo",
-	"type",
-	"exit",
-	"pwd",
-	"cd",
+var builtinCommands = map[string]commandFunc{
+	"exit": commands.CommandExit,
+	"echo": commands.CommandEcho,
+	"type": commands.CommandType,
+	"pwd":  commands.CommandPwd,
+	"cd":   commands.CommandCd,
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-
-	commands := map[string]commandFunc{
-		"exit": func(args []string) {
-			os.Exit(0)
-		},
-		"echo": func(args []string) {
-			fmt.Println(strings.Join(args, " "))
-		},
-		"type": func(args []string) {
-			if len(args) == 1 {
-				if slices.Contains(builtins, args[0]) {
-					fmt.Printf("%s is a shell builtin\n", args[0])
-					return
-				}
-
-				if execPath, err := exec.LookPath(args[0]); err == nil {
-					fmt.Printf("%s is %s\n", args[0], execPath)
-					return
-				}
-
-				fmt.Printf("%s: not found\n", args[0])
-			}
-		},
-		"pwd": func(args []string) {
-			currentDirectory, _ := os.Getwd()
-
-			if currentDirectory != "" {
-				fmt.Printf("%s\n", currentDirectory)
-			}
-		},
-		"cd": func(args []string) {
-			if args[0] != "" {
-				path := args[0]
-
-				if path == "~" {
-					path = os.Getenv("HOME")
-				}
-
-				if err := os.Chdir(path); err != nil {
-					fmt.Printf("cd: %s: No such file or directory\n", path)
-				}
-			}
-		},
-	}
 
 	for {
 		fmt.Print("$ ")
@@ -81,27 +38,64 @@ func main() {
 			continue
 		}
 
-		parts := strings.Fields(command)
+		parts := parseCommand(command)
+
 		instruction := parts[0]
+		args := parts[1:]
 
-		handler, ok := commands[instruction]
-
-		if ok {
-			handler(parts[1:])
-			continue
-		}
-
-		execPath, _ := exec.LookPath(instruction)
-
-		if execPath != "" {
-			cmd := exec.Command(instruction, parts[1:]...)
-
-			if content, err := cmd.Output(); len(content) > 0 && err == nil {
-				fmt.Print(string(content))
-				continue
-			}
-		}
-
-		fmt.Printf("%s: command not found\n", instruction)
+		runCommand(instruction, args)
 	}
+}
+
+func runCommand(instruction string, args []string) {
+	handler, ok := builtinCommands[instruction]
+
+	if ok {
+		handler(args)
+		return
+	}
+
+	_, err := exec.LookPath(instruction)
+	if err == nil {
+		cmd := exec.Command(instruction, args...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		cmd.Run()
+		return
+	}
+
+	fmt.Printf("%s: command not found\n", instruction)
+}
+
+func parseCommand(input string) []string {
+	var args []string
+	var current strings.Builder
+
+	isInQuotes := false
+
+	for i := range len(input) {
+		c := input[i]
+
+		switch c {
+		case '\'', '"':
+			isInQuotes = !isInQuotes
+		case ' ':
+			if isInQuotes {
+				current.WriteByte(c)
+			} else if current.Len() > 0 {
+				args = append(args, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteByte(c)
+		}
+	}
+
+	if current.Len() > 0 {
+		args = append(args, current.String())
+	}
+
+	return args
 }
