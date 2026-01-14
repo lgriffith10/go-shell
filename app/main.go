@@ -73,16 +73,23 @@ func parseCommand(input string) []string {
 	var args []string
 	var current strings.Builder
 
-	isInQuotes := false
+	isInSingleQuotes := false
+	isInDoubleQuotes := false
 
 	for i := range len(input) {
 		c := input[i]
 
 		switch c {
-		case '\'', '"':
-			isInQuotes = !isInQuotes
+		case '\'':
+			if isInDoubleQuotes {
+				current.WriteByte(c)
+				continue
+			}
+			isInSingleQuotes = !isInSingleQuotes
+		case '"':
+			isInDoubleQuotes = !isInDoubleQuotes
 		case ' ':
-			if isInQuotes {
+			if (isInSingleQuotes && !isInDoubleQuotes) || isInDoubleQuotes {
 				current.WriteByte(c)
 			} else if current.Len() > 0 {
 				args = append(args, current.String())
