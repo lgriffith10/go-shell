@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/commands"
+	"github.com/codecrafters-io/shell-starter-go/app/parser"
 )
 
 type commandFunc func(args []string)
@@ -38,7 +39,7 @@ func main() {
 			continue
 		}
 
-		parts := parseCommand(command)
+		parts := parser.ParseCommand(command)
 
 		instruction := parts[0]
 		args := parts[1:]
@@ -67,42 +68,4 @@ func runCommand(instruction string, args []string) {
 	}
 
 	fmt.Printf("%s: command not found\n", instruction)
-}
-
-func parseCommand(input string) []string {
-	var args []string
-	var current strings.Builder
-
-	isInSingleQuotes := false
-	isInDoubleQuotes := false
-
-	for i := range len(input) {
-		c := input[i]
-
-		switch c {
-		case '\'':
-			if isInDoubleQuotes {
-				current.WriteByte(c)
-				continue
-			}
-			isInSingleQuotes = !isInSingleQuotes
-		case '"':
-			isInDoubleQuotes = !isInDoubleQuotes
-		case ' ':
-			if (isInSingleQuotes && !isInDoubleQuotes) || isInDoubleQuotes {
-				current.WriteByte(c)
-			} else if current.Len() > 0 {
-				args = append(args, current.String())
-				current.Reset()
-			}
-		default:
-			current.WriteByte(c)
-		}
-	}
-
-	if current.Len() > 0 {
-		args = append(args, current.String())
-	}
-
-	return args
 }
